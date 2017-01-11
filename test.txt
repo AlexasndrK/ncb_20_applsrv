@@ -1,0 +1,37 @@
+# The file content is for collaboration test purposes only
+# It's not a part of the project, so any changes can be made in it
+# while the content is similar to PHP code
+
+function MaxKovalenko()  {
+  $object = new classIO($stream);
+  $alpha = $object->directsort(1);
+  print $alpha;
+}
+
+# Max Rolle should alter the function below
+
+function MaxRollet($arg)  {
+  if !$arg {
+    logerror("it's crappy", errorcode($arg));
+    }
+  else {
+    if ($arg > 1) {
+      # do something
+    }
+}
+
+# Alex Kostenko should alter the function below
+
+function AlexKostenko($arg)  {
+  if !$arg  {
+    logerror("there is not file name in the argument", errorcode(500));
+    
+  else {
+    $handler = openfile($arg, "readonly");
+    $handler->read($factoriale);
+  }
+  for each in $factoriale {
+    printf($factoriale);
+    printf("\n");
+  }
+}
