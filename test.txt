@@ -8,9 +8,12 @@ function MaxKovalenko()  {
   print $alpha;
 }
 
+
+
+
 # Max Rolle should alter the function below
 
-
+ALTER EGO!!!!!!!!!!!
 
 
 function MaxRollet($arg)  {
