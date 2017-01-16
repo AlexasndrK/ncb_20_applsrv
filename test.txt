@@ -10,6 +10,9 @@ function MaxKovalenko()  {
 
 # Max Rolle should alter the function below
 
+
+
+
 function MaxRollet($arg)  {
   if !$arg {
     logerror("it's crappy", errorcode($arg));
@@ -19,6 +22,41 @@ function MaxRollet($arg)  {
       # do something
     }
 }
+
+#Some functions from php-file
+
+function getConferencesbyRoom($room)
+{
+    global $db;
+
+    $sql = "select * from dnis2conf where confroom=$room";
+    $res = mysqli_query($db, $sql);
+
+    if (mysqli_num_rows($res) == 1) {
+        $sql = "select a.dnis, a.confroom, b.confpass, b.confowner, b.confadminpin, b.maxuser, b.spinuser, b.spinmod, b.parent, b.confexpired ";
+        $sql .= "from dnis2conf as a left join conference as b on a.confroom = b.confroom where a.confroom = '$room'";
+    } else {
+        $sql = "select \"null\" as dnis, b.confroom, b.confpass, b.confowner, b.confadminpin, b.maxuser, b.spinuser, b.spinmod, b.parent, b.confexpired";
+        $sql .= " from conference as b where b.confroom = '$room'";
+    }
+
+    error_log($sql);
+
+    $res = mysqli_query($db, $sql);
+    if (!$res) {
+        return array("result" => "false", "why" => mysqli_error($db));
+    } else {
+        while ($rows[] = mysqli_fetch_assoc($res))
+            ;
+        array_pop($rows);
+        return $rows;
+    }
+}
+
+
+
+
+
 
 # Alex Kostenko should alter the function below
 
