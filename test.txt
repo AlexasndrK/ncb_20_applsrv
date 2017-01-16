@@ -14,7 +14,7 @@ function MaxKovalenko()  {
 # Max Rolle should alter the function below
 
 ALTER EGO!!!!!!!!!!!
-
+EDITION DONE from WEB face!
 
 function MaxRollet($arg)  {
   if !$arg {
