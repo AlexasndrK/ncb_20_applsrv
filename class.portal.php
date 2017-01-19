@@ -5,6 +5,8 @@ $termEndpoint = "65.48.99.10";
 
 $db = new mysqli("65.48.98.238", "freeswitch", "fr33sw1tch", "fsconference");
 
+$db1 = new mysqli("65.48.98.238", "haproxy", "haproxy", "nbs_conf");
+
 function getConferenceRoomInfo($confroom)
 {
     global $db;
@@ -539,7 +541,9 @@ function getRecordings($room)
 
 function provisionConference($method, array $data)
 {
-    global $db;
+//    global $db;
+    global $db1;
+        
     switch (strtoupper($method)) {
         case "CREATE":
             $room = rand(1000, 9999);
