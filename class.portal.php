@@ -3,7 +3,9 @@
 //  TDM Endpoint
 $termEndpoint = "65.48.99.10";
 
-$db = new mysqli("65.48.98.238", "freeswitch", "fr33sw1tch", "fsconference");
+//$db = new mysqli("65.48.98.238", "freeswitch", "fr33sw1tch", "fsconference");
+
+$db = new mysqli("65.48.98.242", "haproxy", "haproxy", "nbs_conf");
 
 $db1 = new mysqli("65.48.98.238", "haproxy", "haproxy", "nbs_conf");
 
@@ -143,7 +145,8 @@ function getConferencesbyDNIS($dnis)
     }
 }
 
-function getConferencesbyRoom($room)
+
+/* function getConferencesbyRoom($room)
 {
     global $db;
 
@@ -165,11 +168,86 @@ function getConferencesbyRoom($room)
         return array("result" => "false", "why" => mysqli_error($db));
     } else {
         while ($rows[] = mysqli_fetch_assoc($res))
-            ;
+           ;
         array_pop($rows);
         return $rows;
     }
+} */ 
+
+
+
+function getConferencesbyRoom($room)
+{
+    global $db;
+
+      $sql = "select * from conf_room where room_id=$room";
+       
+    $res = mysqli_query($db, $sql);
+
+    if (mysqli_num_rows($res) == 1) {
+    
+       $sql = "select vcb_id, room_id, attendee_pin, moderator_pin, maxallowed  from conf_room where room_id = '$room'";
+//       $sql = "select * from conf_room where room_id=$room";		
+					 
+    } else {
+ 
+       $sql = "select \"null\" as vcb_id, room_id, attendee_pin, moderator_pin, maxallowed from conf_room where room_id = '$room'";
+         
+    }
+
+    error_log($sql);
+
+    $res = mysqli_query($db, $sql);
+
+//file_put_contents('/home/tmp/res.txt', serialize($res) );
+	
+    if (!$res) {
+        return array("result" => "false", "why" => mysqli_error($db));
+    } else {
+    	
+/*		
+        while ($rows[] = mysqli_fetch_assoc($res))
+            ;
+        array_pop($rows);
+*/     
+         while ($row[] = mysqli_fetch_assoc($res)); 
+         array_pop($row); 
+         file_put_contents('/home/tmp/res.txt', serialize($row[0]['vcb_id']) );
+		 
+       	$rows["dnis"] = $row[0]["vcb_id"];
+	//	$row["dnis"] = isset($row["vcb_id"]) ? $row["vcb_id"] : null;
+		$rows["confroom"] = $row[0]["room_id"];
+	//	$row["confroom"] = isset($row["room_id"]) ? $row["room_id"] : null;
+		$rows["confpass"] = $row[0]["attendee_pin"];
+   //   $row["confpass"] = isset($row["attendee_pin"]) ? $row["attendee_pin"] : null;
+		$rows["confadminpin"] = $row[0]["moderator_pin"];
+	//	$row["confadminpin"] = isset($row["moderator_pin"]) ? $row["moderator_pin"] : null;
+		$rows["maxuser"] = $row[0]["maxallowed"];
+	//	$row["maxuser"] = isset($row["maxallowed"]) ? $row["maxallowed"] : null;
+		$rows["confowner"] = "1245678";
+		$rows["spinuser"] = "1234567";
+		$rows["spinmod"]	= "6769";
+		$rows["parent"] 	= "";
+		$rows["confexpired"] = "1485453921"; 
+
+file_put_contents("/home/tmp/row.txt", serialize($row) );
+		 
+        unset($row[0]["vcb_id"]);
+		unset($row[0]["room_id"]);
+		unset($row[0]["attendee_pin"]);
+		unset($row[0]["moderator_pin"]);
+		unset($row[0]["maxallowed"]); 
+         
+        // $rows[] = $row	;
+file_put_contents("/home/tmp/total.tx", serialize($row) );
+         return $rows;
+         
+    }
+	
 }
+
+
+
 
 function getAllConferenceRooms($custid)
 {
@@ -496,7 +574,7 @@ function getConfUUID($room)
     return $xmlattr->uuid;
 }
 
-function getRecording($uuid) // MK
+function getRecording($uuid)
 {
     global $db;
     $sql = "select filelocation from recordings where uuid='$uuid'";
