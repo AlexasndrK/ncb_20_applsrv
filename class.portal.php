@@ -1,10 +1,13 @@
 <?PHP
 
+// prj. NCB 20. The code is improved
+
 //  TDM Endpoint
 $termEndpoint = "65.48.99.10";
 ini_set('display_startup_errors', 1);
 ini_set('display_errors', 1);
 error_reporting(-1);
+
 //$db = new mysqli("65.48.98.238", "freeswitch", "fr33sw1tch", "fsconference");
 
 $db = new mysqli("65.48.98.242", "haproxy", "haproxy", "nbs_conf");
@@ -21,6 +24,8 @@ function getConferenceRoomInfo($confroom)
     $obj = new stdClass();
     for ($x = 0; $row = mysqli_fetch_assoc($res); $x++) {
        //$esl = new ESLconnection('$row["ip"]', '8021', 'ClueCon');
+       // Looking forward to retrieve below data either from local config file
+       // or configuration DB
         $esl = new ESLconnection('65.48.98.217', '8021', 'ClueCon');
         $e = $esl->api("conference conf_{$confroom} xml_list");
         if ($xml = simplexml_load_string($e->getBody())) {
