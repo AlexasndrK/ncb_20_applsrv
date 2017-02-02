@@ -1,18 +1,13 @@
 <?PHP
 
-// prj. NCB 20. The code is improved
-
 //  TDM Endpoint
 $termEndpoint = "65.48.99.10";
 ini_set('display_startup_errors', 1);
 ini_set('display_errors', 1);
 error_reporting(-1);
-
 //$db = new mysqli("65.48.98.238", "freeswitch", "fr33sw1tch", "fsconference");
 
 $db = new mysqli("65.48.98.242", "haproxy", "haproxy", "nbs_conf");
-
-$db1 = new mysqli("65.48.98.238", "haproxy", "haproxy", "nbs_conf");
 
 function getConferenceRoomInfo($confroom)
 {
@@ -24,8 +19,6 @@ function getConferenceRoomInfo($confroom)
     $obj = new stdClass();
     for ($x = 0; $row = mysqli_fetch_assoc($res); $x++) {
        //$esl = new ESLconnection('$row["ip"]', '8021', 'ClueCon');
-       // Looking forward to retrieve below data either from local config file
-       // or configuration DB
         $esl = new ESLconnection('65.48.98.217', '8021', 'ClueCon');
         $e = $esl->api("conference conf_{$confroom} xml_list");
         if ($xml = simplexml_load_string($e->getBody())) {
@@ -47,6 +40,8 @@ function getConferenceRoomInfo($confroom)
                     if ($node['type'] == "caller") {
                         $flags = $xml->conference->members->member[$y]->flags;
                        // error_log("Flags: {$flags->can_hear}");
+                        $name = changeArray($xml->conference->members->member[$y]->caller_id_name);
+                        $number = rawurldecode(changeArray($xml->conference->members->member[$y]->caller_id_number));
                         $obj->members[$x]->member[$z] = (object)array();
                         $obj->members[$x]->member[$z]->id = changeArray($xml->conference->members->
                             member[$y]->id);
@@ -56,10 +51,16 @@ function getConferenceRoomInfo($confroom)
                         $obj->members[$x]->member[$z]->is_moderator = changeArray($flags->is_moderator);
                         $obj->members[$x]->member[$z]->uuid = changeArray($xml->conference->members->
                             member[$y]->uuid);
-                        $obj->members[$x]->member[$z]->clid_name = changeArray($xml->conference->
-                            members->member[$y]->caller_id_name);
-                        $obj->members[$x]->member[$z]->clid_num = changeArray($xml->conference->members->
-                            member[$y]->caller_id_number);
+                        if (getUserName($number)) {
+                      //  $obj->members[$x]->member[$z]->clid_name = changeArray($xml->conference->
+                      //      members->member[$y]->caller_id_name);
+                          $obj->members[$x]->member[$z]->clid_name = getUserName($number);
+                        } else {
+                          $obj->members[$x]->member[$z]->clid_name = $name;
+                        }
+                      //  $obj->members[$x]->member[$z]->clid_num = rawurldecode(changeArray($xml->conference->members->
+                      //      member[$y]->caller_id_number));
+                        $obj->members[$x]->member[$z]->clid_num = $number;
                         $obj->members[$x]->member[$z]->join_time = changeArray($xml->conference->
                             members->member[$y]->join_time);
                         $obj->members[$x]->member[$z]->last_spoke = changeArray($xml->conference->
@@ -181,7 +182,7 @@ function getConferencesbyDNIS($dnis)
         array_pop($rows);
         return $rows;
     }
-} */ 
+} */
 
 
 
@@ -192,18 +193,18 @@ function getConferencesbyRoom($room)
     $res = mysqli_query($db, $sql);
 
     if (mysqli_num_rows($res) == 1) {
-       $sql = "select rid, vcb_id, room_id, attendee_pin, moderator_pin, maxallowed, type  from conf_room where room_id = '$room'";					 
+       $sql = "select rid, vcb_id, room_id, attendee_pin, moderator_pin, maxallowed, type  from conf_room where room_id = '$room'";
     } else {
        $sql = "select \"null\" as vcb_id, rid,  room_id, attendee_pin, moderator_pin, maxallowed, type from conf_room where room_id = '$room'";
     }
 
     error_log($sql);
-    $res = mysqli_query($db, $sql);	
+    $res = mysqli_query($db, $sql);
     if (!$res) {
         return array("result" => "false", "why" => mysqli_error($db));
     } else {
-         while ($row[] = mysqli_fetch_assoc($res)); 
-         array_pop($row); 
+         while ($row[] = mysqli_fetch_assoc($res));
+         array_pop($row);
   //  file_put_contents("/home/tmp/total.tx", serialize($row));
          $rows["dnis"] = $row[0]["vcb_id"];
 	 $rows["confroom"] = $row[0]["room_id"];
@@ -215,31 +216,31 @@ function getConferencesbyRoom($room)
 	 $rows["spinmod"]	= "6769";
 	 $rows["parent"] 	= "";
          $rid = $row[0]["rid"];
-           
+
          if ($row[0]["type"] == "scheduled") {
           $sql = "select duration, unix_timestamp(start_date) from type_scheduled where rid = '$rid'";
           $rest = mysqli_query($db , $sql);
           $timed = mysqli_fetch_array($rest);
           $time  = $timed[1] + $timed[0]*60;
-	  $rows["confexpired"] = $time; 
-         } 
+	  $rows["confexpired"] = $time;
+         }
          elseif ($row[0]["type"] == "recurring") {
            $sql = "select unix_timestamp(end_date) from type_recurring where rid = '$rid'";
            $rest = mysqli_query($db , $sql);
            $timed = mysqli_fetch_array($rest);
            $rows["confexpired"] = $timed[0];
-         } 
-         else {$rows["confexpired"] = "-1";}		 
+         }
+         else {$rows["confexpired"] = "-1";}
 
          unset($row[0]["vcb_id"]);
 	 unset($row[0]["room_id"]);
 	 unset($row[0]["attendee_pin"]);
 	 unset($row[0]["moderator_pin"]);
-	 unset($row[0]["maxallowed"]); 
-         
-         return $rows;         
+	 unset($row[0]["maxallowed"]);
+
+         return $rows;
     }
-	
+
 }
 
 
@@ -312,7 +313,6 @@ function lockConferenceRoom($confroom)
         $e = $esl->api("conference conf_{$confroom} lock");
         $out .= $e->getBody();
     }
-    error_log("Lock: $out");
     if (strpos($out, "OK conf_{$confroom} locked") === false) {
         return array("result" => false);
     } else {
@@ -379,6 +379,7 @@ function muteConferenceRoom($confroom)
         $esl = new eslConnection($row['ip'], '8021', 'ClueCon');
         $e = $esl->api("conference conf_{$confroom} mute non_moderator");
         $out .= $e->getBody();
+        error_log("Out: $out");
     }
 
     if (strpos($out, "OK mute") === false)
@@ -418,6 +419,7 @@ function deafConferenceRoom($confroom)
         $esl = new eslConnection($row['ip'], '8021', 'ClueCon');
         $e = $esl->api("conference conf_{$confroom} deaf non_moderator");
         $out .= $e->getBody();
+        error_log("Out: $out");
     }
     if (strpos($out, "OK deaf") === false) {
         $ret = false;
@@ -434,10 +436,12 @@ function undeafConferenceRoom($confroom)
     $res = mysqli_query($db, $sql);
     $isXML = 0;
     $obj = new stdClass();
+    $out = "";
     for ($x = 0; $row = mysqli_fetch_assoc($res); $x++) {
         $esl = new eslConnection($row['ip'], '8021', 'ClueCon');
         $e = $esl->api("conference conf_{$confroom} undeaf non_moderator");
         $out .= $e->getBody();
+        error_log("Undeaf: $out");
     }
     if (strpos($out, "OK undeaf") === false) {
         $ret = false;
@@ -615,8 +619,7 @@ function getRecordings($room)
 
 function provisionConference($method, array $data)
 {
-  //    global $db;
-    global $db1;
+    global $db;
     switch (strtoupper($method)) {
         case "CREATE":
             $room = rand(1000, 9999);
@@ -1001,4 +1004,19 @@ function getLowConferenceCount($confroom)
     }
 }
 
+function getUserName($caller)
+{
+    global $db;
+    if (strlen($caller) > 10) {
+      $caller = substr($caller, 2);
+    }
+    $sql = "select name from attendees_invited where contact_phone_number = $caller";
+    $res = mysqli_query($db, $sql) or die(mysql_error());
+    if (mysqli_num_rows($res) == 1) {
+      $row = mysqli_fetch_array($res);
+      return $row[0];
+    } else {
+      return false;
+    }
+}
 ?>
